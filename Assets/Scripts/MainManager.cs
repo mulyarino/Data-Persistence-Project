@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.IO;
 
 public class MainManager : MonoBehaviour
 {
@@ -16,12 +17,33 @@ public class MainManager : MonoBehaviour
     private bool m_Started = false;
     private int m_Points;
     
+    public static int curPonints;
+    public int reScore;
+
+
     private bool m_GameOver = false;
 
+    public InputField inputField;
+    public GameObject inputFieldObj;
+    public Text bestScoreText;
+    public string qqqname;
+
+   // public static MainManager Instance;
     
+
+
+
     // Start is called before the first frame update
+
     void Start()
     {
+        
+        reScore = m_Points;
+        
+        //없어도 되는 것으로 판명
+        //qqqname = null;
+        
+        m_Points = 0;
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
         
@@ -34,8 +56,23 @@ public class MainManager : MonoBehaviour
                 var brick = Instantiate(BrickPrefab, position, Quaternion.identity);
                 brick.PointValue = pointCountArray[i];
                 brick.onDestroyed.AddListener(AddPoint);
+               
+                
+                
+                
             }
         }
+    }
+
+    private void Awake()
+    {
+        
+
+
+       
+        LoadScore();
+      
+        bestScoreText.text = "Best Score : " + qqqname + " : " + m_Points.ToString();
     }
 
     private void Update()
@@ -57,9 +94,25 @@ public class MainManager : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Space))
             {
+                qqqname = inputField.text;
+                
+                //게임 시작 후  저장 된 스코어 < 게임 종료시 현재 스코어
+                if (reScore < curPonints)
+                {
+                    SaveScore();
+                }
+                    
+               //없어도 되는 것으로 판명
+               //bestScoreText.text = qqqname + m_Points.ToString();
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                
+               
+                
             }
+
+            
         }
+        
     }
 
     void AddPoint(int point)
@@ -72,5 +125,52 @@ public class MainManager : MonoBehaviour
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+
+        curPonints = m_Points;
+        
+
+      
+      if(reScore < curPonints)
+        {
+            inputFieldObj.SetActive(true);
+        }  
+      
+        
+        
+
+
     }
+
+    [System.Serializable]
+    class SaveData
+    {
+        public int m_Points;
+        public string qqqname;
+    }
+    public void SaveScore()
+    {
+    
+            SaveData score = new SaveData();
+            score.m_Points = m_Points;
+            score.qqqname = qqqname;
+
+            string json = JsonUtility.ToJson(score);
+            File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+
+    }
+
+    public void LoadScore()
+    {
+        string path = Application.persistentDataPath +"/savefile.json";
+
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+
+            m_Points = data.m_Points;
+            qqqname = data.qqqname;
+        }
+    }
+
 }
